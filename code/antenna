@@ -1,0 +1,57 @@
+% Wideband CPW-Fed Microstrip Antenna Design in MATLAB
+clc; clear; close all;
+
+% Substrate parameters
+epsilon_r = 4.4;       % Relative permittivity (FR4 substrate)
+h = 1.6e-3;            % Substrate thickness (1.6 mm)
+t = 35e-6;             % Conductor thickness (35 µm)
+freq = 2.4e9;          % Center frequency (2.4 GHz for WLAN applications)
+c = 3e8;               % Speed of light
+
+% Patch dimensions (initial approximation)
+lambda = c / freq;     % Wavelength
+W = lambda / (2 * sqrt((epsilon_r + 1) / 2));  % Patch width
+L = lambda / (2 * sqrt(epsilon_r));            % Patch length
+
+% CPW Feed dimensions
+g = 0.5e-3;            % Gap between signal and ground (500 µm)
+w_cpw = 3e-3;          % Width of CPW feed line (3 mm)
+
+% Create substrate
+substrate = dielectric('Name', 'FR4', 'EpsilonR', epsilon_r, 'Thickness', h);
+
+% Define patch shape
+patch = antenna.Rectangle('Length', L, 'Width', W);
+
+% Ground plane
+ground = antenna.Rectangle('Length', 1.5 * lambda, 'Width', 1.5 * lambda);
+
+% Create PCB stack for CPW-fed antenna
+antenna = pcbStack;
+antenna.BoardThickness = h;
+antenna.BoardShape = ground;
+antenna.Layers = {patch, substrate, ground};
+antenna.FeedLocations = [0, w_cpw / 2, 1, 3];  % [x, y, layer, feed type]
+antenna.FeedDiameter = w_cpw;                 % CPW feed width
+
+% Visualize the antenna structure
+figure;
+show(antenna);
+title('CPW-Fed Microstrip Patch Antenna Design');
+
+% S-parameter (Return Loss) Analysis
+freq_range = linspace(1e9, 5e9, 201);  % Frequency range from 1 GHz to 5 GHz
+s = sparameters(antenna, freq_range);
+
+% Plot Return Loss (S11)
+figure;
+rfplot(s);
+title('Return Loss (S11) vs Frequency');
+xlabel('Frequency (Hz)');
+ylabel('S11 (dB)');
+grid on;
+
+% Radiation Pattern Analysis at Center Frequency
+figure;
+pattern(antenna, freq);
+title('Radiation Pattern at 2.4 GHz');
